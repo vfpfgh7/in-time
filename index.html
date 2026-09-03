@@ -216,198 +216,207 @@
     <footer>
       <p><strong>No copyright.</strong></p>
     </footer>
+<script>
+  const name = document.getElementById("name");
+  const date = document.getElementById("date");
+  const start = document.getElementById("start");
+  const end = document.getElementById("end");
+  const addSchedule = document.querySelector("#scheduler button");
+  const schedulesContainer = document.getElementById("schedules");
 
-    <script>
-      const name = document.getElementById("name");
-      const date = document.getElementById("date");
-      const start = document.getElementById("start");
-      const end = document.getElementById("end");
-      const addSchedule = document.querySelector("#scheduler button");
-      const schedulesContainer = document.getElementById("schedules");
+  let schedules = JSON.parse(localStorage.getItem("schedules")) || [];
 
-      const schedules = [];
+  schedules = schedules.filter(schedule => !isExpired(schedule));
 
-      addSchedule.addEventListener("click", () => {
-        if (!name.value || !date.value || !start.value || !end.value) {
-          alert("Please fill in all fields.");
-          return;
-        }
+  localStorage.setItem("schedules", JSON.stringify(schedules));
 
-        if (start.value > end.value) {
-          alert("End time must be after start time.");
-          return;
-        }
+  findAvailableTime();
 
-        const schedule = {
-          name: name.value,
-          date: date.value,
-          start: start.value,
-          end: end.value
-        };
+  addSchedule.addEventListener("click", () => {
+    if (!name.value || !date.value || !start.value || !end.value) {
+      alert("Please fill in all fields.");
+      return;
+    }
 
-        schedules.push(schedule);
+    if (start.value > end.value) {
+      alert("End time must be after start time.");
+      return;
+    }
 
-        findAvailableTime();
+    const schedule = {
+      name: name.value,
+      date: date.value,
+      start: start.value,
+      end: end.value
+    };
 
-        name.value = "";
-        date.value = "";
-        start.value = "";
-        end.value = "";
+    schedules.push(schedule);
+
+    findAvailableTime();
+
+    name.value = "";
+    date.value = "";
+    start.value = "";
+    end.value = "";
+  });
+
+  function displaySchedules() {
+    schedulesContainer.innerHTML = "<h2>Your Schedules</h2>";
+
+    schedules.forEach((schedule, index) => {
+      const item = document.createElement("div");
+
+      item.className = "schedule";
+
+      item.innerHTML = `
+        <div class="schedule-name">${schedule.name}</div>
+
+        <div class="schedule-time">
+          ${schedule.date}<br>
+          ${schedule.start} - ${schedule.end}
+        </div>
+
+        <div class="schedule-actions">
+          <button class="edit-button" type="button">Edit</button>
+          <button class="delete-button" type="button">Delete</button>
+        </div>
+      `;
+
+      item.querySelector(".edit-button").addEventListener("click", () => {
+        editSchedule(index);
       });
 
-      function displaySchedules() {
-        schedulesContainer.innerHTML = "<h2>Your Schedules</h2>";
-
-        schedules.forEach((schedule, index) => {
-          const item = document.createElement("div");
-
-          item.className = "schedule";
-
-          if (isExpired(schedule)) {
-            item.classList.add("expired");
-          }
-
-          item.innerHTML = `
-            <div class="schedule-name">${schedule.name}</div>
-
-            <div class="schedule-time">
-              ${schedule.date}<br>
-              ${schedule.start} - ${schedule.end}
-            </div>
-
-            <div class="schedule-actions">
-              <button class="edit-button" type="button">Edit</button>
-              <button class="delete-button" type="button">Delete</button>
-            </div>
-          `;
-
-          item.querySelector(".edit-button").addEventListener("click", () => {
-            editSchedule(index);
-          });
-
-          item.querySelector(".delete-button").addEventListener("click", () => {
-            schedules.splice(index, 1);
-            displaySchedules();
-          });
-
-          schedulesContainer.appendChild(item);
-        });
-      }
-
-      function editSchedule(index) {
-        const schedule = schedules[index];
-
-        name.value = schedule.name;
-        date.value = schedule.date;
-        start.value = schedule.start;
-        end.value = schedule.end;
-
+      item.querySelector(".delete-button").addEventListener("click", () => {
         schedules.splice(index, 1);
-
+        saveSchedules();
         displaySchedules();
-      }
+      });
 
-      function isExpired(schedule) {
-        const endDateTime = new Date(`${schedule.date}T${schedule.end}`);
+      schedulesContainer.appendChild(item);
+    });
+  }
 
-        return endDateTime < new Date();
-      }
+  function editSchedule(index) {
+    const schedule = schedules[index];
 
-      function findAvailableTime() {
+    name.value = schedule.name;
+    date.value = schedule.date;
+    start.value = schedule.start;
+    end.value = schedule.end;
+
+    schedules.splice(index, 1);
+
+    saveSchedules();
+    displaySchedules();
+  }
+
+  function isExpired(schedule) {
+    const endDateTime = new Date(`${schedule.date}T${schedule.end}`);
+
+    return endDateTime < new Date();
+  }
+
+  function saveSchedules() {
+    localStorage.setItem("schedules", JSON.stringify(schedules));
+  }
+
+  function findAvailableTime() {
     const urgencyKeywords = {
-        extreme: [
-            "emergency",
-            "urgent",
-            "critical",
-            "asap",
-            "immediately",
-            "now",
-            "crisis",
-            "deadline",
-            "overdue",
-            "last chance"
-        ],
+      extreme: [
+        "emergency",
+        "urgent",
+        "critical",
+        "asap",
+        "immediately",
+        "now",
+        "crisis",
+        "deadline",
+        "overdue",
+        "last chance"
+      ],
 
-        high: [
-            "today",
-            "tonight",
-            "tomorrow",
-            "exam",
-            "test",
-            "interview",
-            "presentation",
-            "submission",
-            "appointment",
-            "flight",
-            "departure",
-            "funeral",
-            "wedding",
-            "court"
-        ],
+      high: [
+        "today",
+        "tonight",
+        "tomorrow",
+        "exam",
+        "test",
+        "interview",
+        "presentation",
+        "submission",
+        "appointment",
+        "flight",
+        "departure",
+        "funeral",
+        "wedding",
+        "court"
+      ],
 
-        medium: [
-            "birthday",
-            "anniversary",
-            "launch",
-            "release",
-            "demo",
-            "conference",
-            "competition",
-            "game",
-            "performance",
-            "meeting",
-            "project",
-            "assignment",
-            "homework",
-            "school",
-            "work"
-        ],
+      medium: [
+        "birthday",
+        "anniversary",
+        "launch",
+        "release",
+        "demo",
+        "conference",
+        "competition",
+        "game",
+        "performance",
+        "meeting",
+        "project",
+        "assignment",
+        "homework",
+        "school",
+        "work"
+      ],
 
-        low: [
-            "event",
-            "party",
-            "practice",
-            "training",
-            "shopping",
-            "errand",
-            "coffee",
-            "lunch",
-            "dinner",
-            "call",
-            "chat",
-            "visit",
-            "hangout",
-            "quick"
-        ]
+      low: [
+        "event",
+        "party",
+        "practice",
+        "training",
+        "shopping",
+        "errand",
+        "coffee",
+        "lunch",
+        "dinner",
+        "call",
+        "chat",
+        "visit",
+        "hangout",
+        "quick"
+      ]
     };
 
     const priority = {
-        extreme: 0,
-        high: 1,
-        medium: 2,
-        low: 3
+      extreme: 0,
+      high: 1,
+      medium: 2,
+      low: 3
     };
 
     function getUrgency(name) {
-        const text = name.toLowerCase();
+      const text = name.toLowerCase();
 
-        for (const level of ["extreme", "high", "medium", "low"]) {
-            for (const keyword of urgencyKeywords[level]) {
-                if (text.includes(keyword)) {
-                    return priority[level];
-                }
-            }
+      for (const level of ["extreme", "high", "medium", "low"]) {
+        for (const keyword of urgencyKeywords[level]) {
+          if (text.includes(keyword)) {
+            return priority[level];
+          }
         }
+      }
 
-        return 4;
+      return 4;
     }
 
     schedules.sort((a, b) => {
-        return getUrgency(a.name) - getUrgency(b.name);
+      return getUrgency(a.name) - getUrgency(b.name);
     });
 
+    saveSchedules();
     displaySchedules();
-}
-    </script>
+  }
+</script>
+
   </body>
 </html>
